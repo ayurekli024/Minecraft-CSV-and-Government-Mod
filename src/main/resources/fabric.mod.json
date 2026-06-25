@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "secretid",
+  "version": "${version}",
+  "name": "Secret ID Mod",
+  "description": "Secret ID, Economy and Roles mod.",
+  "authors": [
+    "Antigravity"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/secretid/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.example.secretid.SecretIdMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  }
+}

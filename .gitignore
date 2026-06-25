@@ -1,0 +1,24 @@
+# Gradle
+.gradle/
+build/
+bin/
+
+# Local Gradle installation
+gradle-9.5.1/
+
+# Minecraft Run directory
+run/
+
+# Logs
+*.log
+
+# IDEs and editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
