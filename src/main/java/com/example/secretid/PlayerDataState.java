@@ -14,6 +14,18 @@ import java.util.Random;
 import java.util.UUID;
 
 public class PlayerDataState extends PersistentState {
+
+    public static class ShopInfo {
+        public final UUID ownerUuid;
+        public final String ownerName;
+        public double price;
+
+        public ShopInfo(UUID ownerUuid, String ownerName, double price) {
+            this.ownerUuid = ownerUuid;
+            this.ownerName = ownerName;
+            this.price = price;
+        }
+    }
     
     private final Map<UUID, String> uuidToSecretId = new HashMap<>();
     private final Map<String, UUID> secretIdToUuid = new HashMap<>();
@@ -23,6 +35,7 @@ public class PlayerDataState extends PersistentState {
     private double treasuryBalance = 1000000.0;
     private final Map<String, Double> globalTaxes = new HashMap<>();
     private final Map<UUID, Map<String, Double>> playerTaxPayments = new HashMap<>();
+    private final Map<String, ShopInfo> shops = new HashMap<>();
     
     private final Random random = new Random();
 
@@ -61,6 +74,16 @@ public class PlayerDataState extends PersistentState {
         nbt.put("playerTaxPayments", paymentsList);
         
         nbt.putDouble("treasuryBalance", treasuryBalance);
+        
+        NbtCompound shopsCompound = new NbtCompound();
+        for (Map.Entry<String, ShopInfo> entry : shops.entrySet()) {
+            NbtCompound shopData = new NbtCompound();
+            shopData.putUuid("ownerUuid", entry.getValue().ownerUuid);
+            shopData.putString("ownerName", entry.getValue().ownerName);
+            shopData.putDouble("price", entry.getValue().price);
+            shopsCompound.put(entry.getKey(), shopData);
+        }
+        nbt.put("shops", shopsCompound);
         
         return nbt;
     }
@@ -104,6 +127,17 @@ public class PlayerDataState extends PersistentState {
                     payments.put(key, pTaxes.getDouble(key));
                 }
                 state.playerTaxPayments.put(uuid, payments);
+            }
+        }
+        
+        if (tag.contains("shops")) {
+            NbtCompound shopsCompound = tag.getCompound("shops");
+            for (String key : shopsCompound.getKeys()) {
+                NbtCompound shopData = shopsCompound.getCompound(key);
+                UUID ownerUuid = shopData.getUuid("ownerUuid");
+                String ownerName = shopData.getString("ownerName");
+                double price = shopData.getDouble("price");
+                state.shops.put(key, new ShopInfo(ownerUuid, ownerName, price));
             }
         }
         
@@ -231,6 +265,36 @@ public class PlayerDataState extends PersistentState {
             return true;
         }
         
+        
         return false;
+    }
+
+    public Map<String, ShopInfo> getShops() {
+        return shops;
+    }
+
+    public ShopInfo getShop(String posKey) {
+        return shops.get(posKey);
+    }
+
+    public void addShop(String posKey, UUID ownerUuid, String ownerName, double price) {
+        shops.put(posKey, new ShopInfo(ownerUuid, ownerName, price));
+        this.markDirty();
+    }
+
+    public boolean removeShop(String posKey) {
+        if (shops.remove(posKey) != null) {
+            this.markDirty();
+            return true;
+        }
+        return false;
+    }
+    
+    public void updateShopPrice(String posKey, double newPrice) {
+        ShopInfo info = shops.get(posKey);
+        if (info != null) {
+            info.price = newPrice;
+            this.markDirty();
+        }
     }
 }
