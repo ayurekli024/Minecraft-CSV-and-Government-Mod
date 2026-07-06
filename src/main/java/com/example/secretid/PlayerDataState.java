@@ -27,6 +27,20 @@ public class PlayerDataState extends PersistentState {
         }
     }
     
+    public static class LegalEntity {
+        public String id; // e.g. "X00001"
+        public String name;
+        public UUID ownerUuid;
+        public double balance;
+
+        public LegalEntity(String id, String name, UUID ownerUuid, double balance) {
+            this.id = id;
+            this.name = name;
+            this.ownerUuid = ownerUuid;
+            this.balance = balance;
+        }
+    }
+    
     private final Map<UUID, String> uuidToSecretId = new HashMap<>();
     private final Map<String, UUID> secretIdToUuid = new HashMap<>();
     private final Map<UUID, Double> uuidToBalance = new HashMap<>();
@@ -36,6 +50,9 @@ public class PlayerDataState extends PersistentState {
     private final Map<String, Double> globalTaxes = new HashMap<>();
     private final Map<UUID, Map<String, Double>> playerTaxPayments = new HashMap<>();
     private final Map<String, ShopInfo> shops = new HashMap<>();
+    
+    private final Map<String, LegalEntity> legalEntities = new HashMap<>();
+    private int legalEntityCounter = 0;
     
     private final Random random = new Random();
 
@@ -84,6 +101,18 @@ public class PlayerDataState extends PersistentState {
             shopsCompound.put(entry.getKey(), shopData);
         }
         nbt.put("shops", shopsCompound);
+        
+        NbtCompound leCompound = new NbtCompound();
+        for (Map.Entry<String, LegalEntity> entry : legalEntities.entrySet()) {
+            NbtCompound leData = new NbtCompound();
+            leData.putString("id", entry.getValue().id);
+            leData.putString("name", entry.getValue().name);
+            leData.putUuid("ownerUuid", entry.getValue().ownerUuid);
+            leData.putDouble("balance", entry.getValue().balance);
+            leCompound.put(entry.getKey(), leData);
+        }
+        nbt.put("legalEntities", leCompound);
+        nbt.putInt("legalEntityCounter", legalEntityCounter);
         
         return nbt;
     }
@@ -139,6 +168,21 @@ public class PlayerDataState extends PersistentState {
                 double price = shopData.getDouble("price");
                 state.shops.put(key, new ShopInfo(ownerUuid, ownerName, price));
             }
+        }
+        
+        if (tag.contains("legalEntities")) {
+            NbtCompound leCompound = tag.getCompound("legalEntities");
+            for (String key : leCompound.getKeys()) {
+                NbtCompound leData = leCompound.getCompound(key);
+                String id = leData.getString("id");
+                String name = leData.getString("name");
+                UUID ownerUuid = leData.getUuid("ownerUuid");
+                double balance = leData.getDouble("balance");
+                state.legalEntities.put(key, new LegalEntity(id, name, ownerUuid, balance));
+            }
+        }
+        if (tag.contains("legalEntityCounter")) {
+            state.legalEntityCounter = tag.getInt("legalEntityCounter");
         }
         
         return state;
@@ -296,5 +340,22 @@ public class PlayerDataState extends PersistentState {
             info.price = newPrice;
             this.markDirty();
         }
+    }
+    
+    public LegalEntity createLegalEntity(String name, UUID ownerUuid) {
+        legalEntityCounter++;
+        String newId = String.format("X%05d", legalEntityCounter);
+        LegalEntity le = new LegalEntity(newId, name, ownerUuid, 0.0);
+        legalEntities.put(newId, le);
+        markDirty();
+        return le;
+    }
+
+    public LegalEntity getLegalEntity(String id) {
+        return legalEntities.get(id);
+    }
+    
+    public java.util.Collection<LegalEntity> getLegalEntities() {
+        return legalEntities.values();
     }
 }

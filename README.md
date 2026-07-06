@@ -1,61 +1,62 @@
-# Secret ID Economy & Government Mod (Fabric 1.20.1)
+# Secret ID Mod
 
-A feature-rich roleplay, economy, and government management mod for Minecraft Fabric 1.20.1. This mod introduces a unique identity system, a fixed-supply economy, a taxation framework, and real-world data fetching via Google Sheets!
+Minecraft sunucuları için gelişmiş rol, ekonomi, vergi, devlet yönetimi, yasa ve tüzel kişilik sistemleri sunan bir Fabric modudur.
 
-## Features
+## Sürüm
+Güncel sürüm: **1.6.0**
 
-### 1. Secret ID System
-* Every player is assigned a unique, randomly generated **6-character alphanumeric Secret ID** upon joining.
-* IDs are completely private. Only the player and Server Admins know who owns which ID.
-* All financial transactions (sending money) are done using these IDs, ensuring complete anonymity in the economy.
+## Özellikler
 
-### 2. Fixed-Supply Economy & Treasury
-* The economy is designed with a **fixed supply** of exactly `1,000,000 AK Lira`.
-* New players do not spawn with money. The entire supply initially sits in the **State Treasury**.
-* The **President** can distribute funds to the public by sending money from the Treasury to citizens' Secret IDs.
+### 1. Rol Sistemi
+Oyunculara çeşitli hükümet rolleri atanabilir. Bu roller sayesinde devlet hazinesine, kurumlara ve vergilere müdahale edebilirler.
+- **Roller:** `PRESIDENT` (Cumhurbaşkanı), `PRIME_MINISTER` (Başbakan), `MINISTER` (Bakan), `MAYOR` (Belediye Başkanı), `MP` (Milletvekili), `NONE` (Vatandaş).
+- `/setrole <secret_id> <rol>`: Bir oyuncunun rolünü ayarlar (Sadece sunucu yetkilileri kullanabilir).
 
-### 3. Government Roles & Administration
-* Admins can assign roles to players (e.g., `PRESIDENT`, `MAYOR`, `MP`).
-* The President has exclusive access to manage the State Treasury, mint/withdraw funds, and manage taxes.
+### 2. Gizli Kimlik (Secret ID) ve Ekonomi
+Her oyuncunun 6 haneli rastgele bir gizli kimliği (Örn: A4B9Z1) ve bir bakiye hesabı bulunur.
+- `/id`: Kendi gizli kimliğinizi (Secret ID) gösterir.
+- `/bakiye`: Mevcut bakiyenizi (AK Lirası) gösterir.
+- `/bakiye ekle <secret_id> <miktar>`: OP/Yönetici komutu. İstenen ID'ye para ekler.
+- `/bakiye sil <secret_id> <miktar>`: OP/Yönetici komutu. İstenen ID'den para siler.
+- `/gonder <hedef_secret_id> <miktar>`: Kendi hesabınızdan başka bir ID'ye para gönderir.
 
-### 4. Advanced Tax System
-* The President can enact new global taxes by defining a 3-letter tax code and an amount (e.g., `/vergi ekle KDV 500`).
-* Taxes are automatically recorded as debt for all citizens.
-* Citizens can pay their taxes in installments. All paid taxes go directly back into the State Treasury, keeping the economy balanced.
+### 3. Vergi Sistemi
+Hükümet yetkilileri vergi oluşturabilir. Oyuncular bu vergileri devlet hazinesine ödemek zorundadır.
+- `/vergi ekle <vergi_adi> <miktar>`: Yeni bir vergi kalemi ve tutarı oluşturur (Cumhurbaşkanı ve Başbakan).
+- `/vergi borcum`: Oyuncunun devlete olan borçlarını listeler.
+- `/vergi ode <vergi_adi> <miktar>`: Vergi borcunu öder (Para doğrudan devlet hazinesine geçer).
 
-### 5. Real-Time Cloud Data Integration
-* The mod fetches live economic data (Inflation, Growth, Export, etc.) and exchange rates directly from a live **Google Sheets** document.
-* The President can view detailed state economy data, and citizens can view live, real-world exchange rates via in-game commands.
+### 4. Devlet Hazinesi
+Devletin kendine ait bir kasası vardır. Vergi gelirleri buraya birikir.
+- `/hazine`: Hazinedeki toplam bakiyeyi gösterir (Sadece Hükümet).
+- `/hazine gonder <hedef_secret_id> <miktar>`: Hazineden bir oyuncuya ödeme/maaş gönderir (Cumhurbaşkanı ve Başbakan).
+- `/govdata`: Tüm Hükümet istatistiklerini (Roller, Bakiyeler, Borçlar) sunar (Sadece Hükümet).
 
-## Commands
+### 5. Yasa ve Oylama Sistemi
+Yasa tasarıları mecliste (Milletvekilleri ve Başbakan) oylanır ve Cumhurbaşkanı tarafından onaylanıp yürürlüğe girer. Tüm yasalar `secret_id_laws.json` dosyasında tutulur.
+- `/yasa olustur <secret_id> <baslik> <icerik...>`: Yeni yasa tasarısı açar.
+- `/yasa duzenle <secret_id> <yasa_kodu> <yeni_icerik...>`: Yasa içeriğini değiştirir. (Sadece Başbakan)
+- `/yasa oyla <secret_id> <yasa_kodu> <evet/hayir>`: Belirtilen yasaya evet veya hayır oyu atar. (Milletvekili ve Başbakan)
+- `/yasa onayla <secret_id> <yasa_kodu>`: Oylamada olan bir yasayı yürürlüğe koyar. (Cumhurbaşkanı)
+- `/yasa reddet <secret_id> <yasa_kodu>`: Yasa tasarısını reddeder. (Cumhurbaşkanı)
+- `/yasa liste`: Tüm yasaları ve durumlarını listeler.
+- `/yasa detay <yasa_kodu>`: Bir yasanın metnini ve tam evet/hayır oylarını gösterir.
 
-### Citizen Commands
-* `/myid` - View your personal Secret ID.
-* `/balance` - Check your current balance.
-* `/pay <target_secret_id> <amount>` - Transfer money to another citizen anonymously.
-* `/borc` - View your unpaid taxes and outstanding debts.
-* `/vergi ode <tax_code> <amount>` - Pay your taxes (supports partial/installment payments).
-* `/govexchangerate` - Fetch live currency exchange rates from the cloud.
+### 6. Sandık Dükkanı (Shop Chest)
+Oyuncular vanilya sandık veya varillerini kişisel dükkanlara çevirebilir.
+- `/shop create <fiyat>`: Bakılan sandığı/varili dükkana dönüştürür.
+- `/shop price <yeni_fiyat>`: Bakılan dükkanın fiyatını günceller.
+- `/shop remove`: Dükkanı kaldırır.
+- *Kullanım:* Sandığa ilk sağ tıklandığında bilgi verir, 5 saniye içinde tekrar sağ tıklandığında içindeki eşya satın alınır. Sadece dükkan sahibi veya OP'ler sandığı açıp kırabilir.
 
-### President Commands
-* `/hazine` - View the total amount of money currently in the State Treasury.
-* `/hazine gonder <target_secret_id> <amount>` - Transfer money from the Treasury to a citizen.
-* `/hazine cek <amount>` - Withdraw money from the Treasury to your personal account.
-* `/vergi ekle <tax_code> <amount>` - Create a new tax or update an existing one.
-* `/govdata <your_secret_id> [date]` - Fetch confidential state economic data from the cloud.
+### 7. Tüzel Kişilik (Kurum/Şirket) Sistemi
+Devlet veya oyuncular tarafından yönetilen, `X00001` formatında ID'si ve kendi bakiyesi olan bağımsız hesaplar. Taksi modu gibi başka modlar da bu sistemi fon havuzu olarak kullanabilir.
+- `/kurum olustur <kurum_adi>`: Yeni bir tüzel kişilik oluşturur (Sadece Hükümet).
+- `/kurum bilgi <X_kodu>`: Kurum bilgisini ve bakiyesini gösterir.
+- `/kurum fonla <secret_id> <X_kodu> <miktar>`: Devlet hazinesinden kuruma bakiye aktarır (Sadece Cumhurbaşkanı yetkilidir ve sahteciliği önlemek için kendi `secret_id`'si ile imzalamalıdır).
+- `/kurum yatir <X_kodu> <miktar>`: Kendi cebinizden kurumun kasasına para yatırır.
+- `/kurum cek <X_kodu> <miktar>`: Kurum kasasından kendi cebinize para çeker (Sadece Sahibi).
+- `/kurum gonder <X_kodu> <hedef_secret_id> <miktar>`: Kurum kasasından bir oyuncuya para öder (Sadece Sahibi).
 
-### Admin Commands (Requires Permission Level 2)
-* `/setid <player_name> <new_id>` - Manually change a player's Secret ID.
-* `/setrole <target_secret_id> <role>` - Assign a government role to a player (`NONE`, `PRESIDENT`, `MAYOR`, `MP`).
-
-## Setup & Installation
-1. Install [Fabric Loader](https://fabricmc.net/) for Minecraft 1.20.1.
-2. Place the compiled `.jar` file into your server's or client's `mods` folder.
-3. Enjoy your new fully-fledged government roleplay experience!
-
-## Development
-This mod is built using the Fabric API. To compile the mod from source:
-```bash
-./gradlew build
-```
-The compiled jar will be located in the `build/libs/` directory.
+**Geliştiriciler İçin API Komutu:**
+- `/kurum_api ode <X_kodu> <oyuncu_adi> <miktar>`: Harici modların (veya konsol/OP'lerin) görev tamamlandığında bir kurumun kasasından o oyuncuya para yatırmasına imkan tanır.

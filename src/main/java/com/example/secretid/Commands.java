@@ -689,6 +689,235 @@ public class Commands {
                                     player.sendMessage(Text.literal("§3Oylar: §aEvet (" + law.getYesVotes() + ") §f- §cHayır (" + law.getNoVotes() + ")"), false);
                                     return 1;
                                 }))));
+
+        // /kurum commands
+        dispatcher.register(CommandManager.literal("kurum")
+                .then(CommandManager.literal("olustur")
+                        .then(CommandManager.argument("isim", StringArgumentType.string())
+                                .executes(context -> {
+                                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                    PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+                                    Role role = state.getRole(player.getUuid());
+
+                                    if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && role != Role.MINISTER && !context.getSource().hasPermissionLevel(2)) {
+                                        player.sendMessage(Text.literal("§cBu komutu sadece üst düzey yetkililer kullanabilir!"), false);
+                                        return 0;
+                                    }
+
+                                    String isim = StringArgumentType.getString(context, "isim");
+                                    PlayerDataState.LegalEntity le = state.createLegalEntity(isim, player.getUuid());
+                                    
+                                    player.sendMessage(Text.literal("§aYeni tüzel kişilik başarıyla oluşturuldu! ID: §e" + le.id), false);
+                                    return 1;
+                                })))
+                .then(CommandManager.literal("bilgi")
+                        .then(CommandManager.argument("id", StringArgumentType.word())
+                                .executes(context -> {
+                                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                    PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+                                    String id = StringArgumentType.getString(context, "id");
+                                    
+                                    PlayerDataState.LegalEntity le = state.getLegalEntity(id);
+                                    if (le == null) {
+                                        player.sendMessage(Text.literal("§cGeçersiz kurum ID'si!"), false);
+                                        return 0;
+                                    }
+                                    
+                                    player.sendMessage(Text.literal("§b--- " + le.name + " (" + le.id + ") ---"), false);
+                                    String ownerName = player.getServer().getUserCache().getByUuid(le.ownerUuid).map(p -> p.getName()).orElse("Bilinmiyor");
+                                    player.sendMessage(Text.literal("§3Sahibi: §e" + ownerName), false);
+                                    
+                                    if (le.ownerUuid.equals(player.getUuid()) || context.getSource().hasPermissionLevel(2) || state.getRole(player.getUuid()) == Role.PRESIDENT) {
+                                        player.sendMessage(Text.literal("§3Bakiye: §e" + le.balance + " AK Lirası"), false);
+                                    }
+                                    
+                                    return 1;
+                                })))
+                .then(CommandManager.literal("fonla")
+                        .then(CommandManager.argument("secret_id", StringArgumentType.word())
+                                .then(CommandManager.argument("id", StringArgumentType.word())
+                                        .then(CommandManager.argument("miktar", DoubleArgumentType.doubleArg(0.1))
+                                                .executes(context -> {
+                                                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                                    PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+                                                    String providedId = StringArgumentType.getString(context, "secret_id");
+                                                    
+                                                    if (!providedId.equals(state.getSecretId(player.getUuid()))) {
+                                                        player.sendMessage(Text.literal("§cGirdiğiniz gizli kimlik (ID) size ait değil!"), false);
+                                                        return 0;
+                                                    }
+
+                                                    Role role = state.getRole(player.getUuid());
+
+                                                    if (role != Role.PRESIDENT) {
+                                                        player.sendMessage(Text.literal("§cDevlet hazinesinden sadece Cumhurbaşkanı fon aktarabilir!"), false);
+                                                        return 0;
+                                                    }
+
+                                                    String id = StringArgumentType.getString(context, "id");
+                                                    double miktar = DoubleArgumentType.getDouble(context, "miktar");
+                                                    
+                                                    PlayerDataState.LegalEntity le = state.getLegalEntity(id);
+                                                    if (le == null) {
+                                                        player.sendMessage(Text.literal("§cGeçersiz kurum ID'si!"), false);
+                                                        return 0;
+                                                    }
+                                                    
+                                                    if (!state.removeTreasuryBalance(miktar)) {
+                                                        player.sendMessage(Text.literal("§cHazinede yeterli bakiye yok!"), false);
+                                                        return 0;
+                                                    }
+                                                    
+                                                    le.balance += miktar;
+                                                    state.markDirty();
+                                                    
+                                                    player.sendMessage(Text.literal("§aDevlet hazinesinden §e" + le.name + " §aadlı kuruma §e" + miktar + " AK Lirası §afon aktarıldı!"), false);
+                                                    return 1;
+                                                })))))
+                .then(CommandManager.literal("yatir")
+                        .then(CommandManager.argument("id", StringArgumentType.word())
+                                .then(CommandManager.argument("miktar", DoubleArgumentType.doubleArg(0.1))
+                                        .executes(context -> {
+                                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                            PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+
+                                            String id = StringArgumentType.getString(context, "id");
+                                            double miktar = DoubleArgumentType.getDouble(context, "miktar");
+                                            
+                                            PlayerDataState.LegalEntity le = state.getLegalEntity(id);
+                                            if (le == null) {
+                                                player.sendMessage(Text.literal("§cGeçersiz kurum ID'si!"), false);
+                                                return 0;
+                                            }
+                                            
+                                            if (!state.removeBalance(player.getUuid(), miktar)) {
+                                                player.sendMessage(Text.literal("§cYeterli bakiyeniz yok!"), false);
+                                                return 0;
+                                            }
+                                            
+                                            le.balance += miktar;
+                                            state.markDirty();
+                                            
+                                            player.sendMessage(Text.literal("§aKendi hesabınızdan §e" + le.name + " §aadlı kuruma §e" + miktar + " AK Lirası §ayatırdınız!"), false);
+                                            return 1;
+                                        }))))
+                .then(CommandManager.literal("cek")
+                        .then(CommandManager.argument("id", StringArgumentType.word())
+                                .then(CommandManager.argument("miktar", DoubleArgumentType.doubleArg(0.1))
+                                        .executes(context -> {
+                                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                            PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+
+                                            String id = StringArgumentType.getString(context, "id");
+                                            double miktar = DoubleArgumentType.getDouble(context, "miktar");
+                                            
+                                            PlayerDataState.LegalEntity le = state.getLegalEntity(id);
+                                            if (le == null) {
+                                                player.sendMessage(Text.literal("§cGeçersiz kurum ID'si!"), false);
+                                                return 0;
+                                            }
+                                            
+                                            if (!le.ownerUuid.equals(player.getUuid()) && !context.getSource().hasPermissionLevel(2)) {
+                                                player.sendMessage(Text.literal("§cBu işlem için kurumun sahibi olmalısınız!"), false);
+                                                return 0;
+                                            }
+                                            
+                                            if (le.balance < miktar) {
+                                                player.sendMessage(Text.literal("§cKurum kasasında yeterli bakiye yok!"), false);
+                                                return 0;
+                                            }
+                                            
+                                            le.balance -= miktar;
+                                            state.addBalance(player.getUuid(), miktar);
+                                            state.markDirty();
+                                            
+                                            player.sendMessage(Text.literal("§e" + le.name + " §akasasından cebinize §e" + miktar + " AK Lirası §açektiniz!"), false);
+                                            return 1;
+                                        }))))
+                .then(CommandManager.literal("gonder")
+                        .then(CommandManager.argument("id", StringArgumentType.word())
+                                .then(CommandManager.argument("hedef_secret_id", StringArgumentType.word())
+                                        .then(CommandManager.argument("miktar", DoubleArgumentType.doubleArg(0.1))
+                                                .executes(context -> {
+                                                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                                    PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+
+                                                    String id = StringArgumentType.getString(context, "id");
+                                                    String targetSecretId = StringArgumentType.getString(context, "hedef_secret_id");
+                                                    double miktar = DoubleArgumentType.getDouble(context, "miktar");
+                                                    
+                                                    PlayerDataState.LegalEntity le = state.getLegalEntity(id);
+                                                    if (le == null) {
+                                                        player.sendMessage(Text.literal("§cGeçersiz kurum ID'si!"), false);
+                                                        return 0;
+                                                    }
+                                                    
+                                                    if (!le.ownerUuid.equals(player.getUuid()) && !context.getSource().hasPermissionLevel(2)) {
+                                                        player.sendMessage(Text.literal("§cBu işlem için kurumun sahibi olmalısınız!"), false);
+                                                        return 0;
+                                                    }
+                                                    
+                                                    UUID targetUuid = state.getUuidFromId(targetSecretId);
+                                                    if (targetUuid == null) {
+                                                        player.sendMessage(Text.literal("§cHedef gizli kimlik bulunamadı!"), false);
+                                                        return 0;
+                                                    }
+                                                    
+                                                    if (le.balance < miktar) {
+                                                        player.sendMessage(Text.literal("§cKurum kasasında yeterli bakiye yok!"), false);
+                                                        return 0;
+                                                    }
+                                                    
+                                                    le.balance -= miktar;
+                                                    state.addBalance(targetUuid, miktar);
+                                                    state.markDirty();
+                                                    
+                                                    player.sendMessage(Text.literal("§aKurum kasasından hedefe başarıyla para aktarıldı!"), false);
+                                                    ServerPlayerEntity targetPlayer = player.getServer().getPlayerManager().getPlayer(targetUuid);
+                                                    if (targetPlayer != null) {
+                                                        targetPlayer.sendMessage(Text.literal("§aKurum (ID: " + le.id + ") hesabınıza §e" + miktar + " AK Lirası §agönderdi!"), false);
+                                                    }
+                                                    return 1;
+                                                }))))));
+
+        // /kurum_api commands
+        dispatcher.register(CommandManager.literal("kurum_api")
+                .requires(source -> source.hasPermissionLevel(2)) // ONLY server/console/OP
+                .then(CommandManager.literal("ode")
+                        .then(CommandManager.argument("id", StringArgumentType.word())
+                                .then(CommandManager.argument("hedef_oyuncu", StringArgumentType.string())
+                                        .then(CommandManager.argument("miktar", DoubleArgumentType.doubleArg(0.1))
+                                                .executes(context -> {
+                                                    PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+
+                                                    String id = StringArgumentType.getString(context, "id");
+                                                    String targetPlayerName = StringArgumentType.getString(context, "hedef_oyuncu");
+                                                    double miktar = DoubleArgumentType.getDouble(context, "miktar");
+                                                    
+                                                    PlayerDataState.LegalEntity le = state.getLegalEntity(id);
+                                                    if (le == null) {
+                                                        context.getSource().sendMessage(Text.literal("Geçersiz kurum ID'si!"));
+                                                        return 0;
+                                                    }
+                                                    
+                                                    ServerPlayerEntity targetPlayer = context.getSource().getServer().getPlayerManager().getPlayer(targetPlayerName);
+                                                    if (targetPlayer == null) {
+                                                        context.getSource().sendMessage(Text.literal("Hedef oyuncu aktif değil veya bulunamadı!"));
+                                                        return 0;
+                                                    }
+                                                    
+                                                    if (le.balance < miktar) {
+                                                        context.getSource().sendMessage(Text.literal("Kurum kasasında (" + le.id + ") yeterli bakiye yok!"));
+                                                        return 0;
+                                                    }
+                                                    
+                                                    le.balance -= miktar;
+                                                    state.addBalance(targetPlayer.getUuid(), miktar);
+                                                    state.markDirty();
+                                                    
+                                                    targetPlayer.sendMessage(Text.literal("§a" + le.name + " §akurumundan hesabınıza §e" + miktar + " AK Lirası §ayatırıldı! (Görev/Hizmet Bedeli)"), false);
+                                                    return 1;
+                                                }))))));
     }
     
     private static BlockPos getLookedAtBlock(ServerPlayerEntity player) {
