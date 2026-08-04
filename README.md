@@ -3,7 +3,7 @@
 Minecraft sunucuları için gelişmiş rol, ekonomi, vergi, devlet yönetimi, yasa ve tüzel kişilik sistemleri sunan bir Fabric modudur.
 
 ## Sürüm
-Güncel sürüm: **1.6.0**
+Güncel sürüm: **1.7.0**
 
 ## Özellikler
 
@@ -19,6 +19,7 @@ Her oyuncunun 6 haneli rastgele bir gizli kimliği (Örn: A4B9Z1) ve bir bakiye 
 - `/bakiye ekle <secret_id> <miktar>`: OP/Yönetici komutu. İstenen ID'ye para ekler.
 - `/bakiye sil <secret_id> <miktar>`: OP/Yönetici komutu. İstenen ID'den para siler.
 - `/gonder <hedef_secret_id> <miktar>`: Kendi hesabınızdan başka bir ID'ye para gönderir.
+- `/oyuncupara <secret_id>`: Hedef oyuncunun bakiyesini, tapularını, kurumlarını ve dükkanlarını gösterir (Cumhurbaşkanı, Başbakan veya Yetkili).
 
 ### 3. Vergi Sistemi
 Hükümet yetkilileri vergi oluşturabilir. Oyuncular bu vergileri devlet hazinesine ödemek zorundadır.
@@ -30,6 +31,8 @@ Hükümet yetkilileri vergi oluşturabilir. Oyuncular bu vergileri devlet hazine
 Devletin kendine ait bir kasası vardır. Vergi gelirleri buraya birikir.
 - `/hazine`: Hazinedeki toplam bakiyeyi gösterir (Sadece Hükümet).
 - `/hazine gonder <hedef_secret_id> <miktar>`: Hazineden bir oyuncuya ödeme/maaş gönderir (Cumhurbaşkanı ve Başbakan).
+- `/hazine sifirla`: Devlet hazinesini tamamen sıfırlar (Cumhurbaşkanı, Başbakan veya Yetkili).
+- `/hazine fonla <binlik_miktar>`: Yoktan para basmak yerine envanterdeki altın karşılığı hazineye para ekler. 1000 AK Lirası = 64 Altın Külçesi (Sadece Cumhurbaşkanı).
 - `/govdata`: Tüm Hükümet istatistiklerini (Roller, Bakiyeler, Borçlar) sunar (Sadece Hükümet).
 
 ### 5. Yasa ve Oylama Sistemi
@@ -60,3 +63,8 @@ Devlet veya oyuncular tarafından yönetilen, `X00001` formatında ID'si ve kend
 
 **Geliştiriciler İçin API Komutu:**
 - `/kurum_api ode <X_kodu> <oyuncu_adi> <miktar>`: Harici modların (veya konsol/OP'lerin) görev tamamlandığında bir kurumun kasasından o oyuncuya para yatırmasına imkan tanır.
+
+### 8. Tapu Sistemi
+Oyuncuların üzerine kaydedilebilen, değer biçilmiş mülk sistemidir.
+- `/tapularim`: Oyuncunun sahip olduğu tüm tapuları, kurumları ve dükkanları id ve değerleriyle birlikte listeler (Tüm oyuncular kullanabilir).
+- `/tapu kayit <sahip_secret_id> <deger>`: Yeni bir tapu oluşturarak belirtilen oyuncuya kaydeder (Cumhurbaşkanı, Başbakan veya Yetkili).

@@ -2,8 +2,11 @@ package com.example.secretid;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -43,6 +46,56 @@ public class Commands {
                     player.sendMessage(Text.literal("§aMevcut bakiyen: §e" + bal), false);
                     return 1;
                 }));
+
+        // /oyuncupara <id>
+        dispatcher.register(CommandManager.literal("oyuncupara")
+                .then(CommandManager.argument("targetId", StringArgumentType.word())
+                        .executes(context -> {
+                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                            PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+                            Role role = state.getRole(player.getUuid());
+                            
+                            if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && !context.getSource().hasPermissionLevel(2)) {
+                                player.sendMessage(Text.literal("§cBu komutu sadece Cumhurbaskani veya Basbakan kullanabilir!"), false);
+                                return 0;
+                            }
+                            
+                            String targetId = StringArgumentType.getString(context, "targetId");
+                            UUID targetUuid = state.getUuidFromId(targetId);
+                            if (targetUuid == null) {
+                                player.sendMessage(Text.literal("§cBu ID'ye sahip bir oyuncu bulunamadi!"), false);
+                                return 0;
+                            }
+                            
+                            double balance = state.getBalance(targetUuid);
+                            player.sendMessage(Text.literal("§a" + targetId + " ID'li oyuncunun bakiyesi: §e" + balance + " AK Lirasi"), false);
+                            player.sendMessage(Text.literal("§b--- OYUNCUNUN TAPU VE KURUMLARI ---"), false);
+                            boolean foundAny = false;
+                            for (PlayerDataState.LegalEntity le : state.getLegalEntities()) {
+                                if (le.ownerUuid.equals(targetUuid)) {
+                                    player.sendMessage(Text.literal("§3[Kurum] §e" + le.name + " §f(ID: " + le.id + ") - Bakiye: " + le.balance + " AK Lirasi"), false);
+                                    foundAny = true;
+                                }
+                            }
+                            for (PlayerDataState.TapuInfo t : state.getTapular()) {
+                                if (t.ownerUuid.equals(targetUuid)) {
+                                    player.sendMessage(Text.literal("§3[Tapu] §fID: " + t.id + " - Deger: §e" + t.value + " AK Lirasi"), false);
+                                    foundAny = true;
+                                }
+                            }
+                            for (Map.Entry<String, PlayerDataState.ShopInfo> entry : state.getShops().entrySet()) {
+                                if (entry.getValue().ownerUuid.equals(targetUuid)) {
+                                    String posKey = entry.getKey();
+                                    String pos = posKey.contains(":") ? posKey.substring(posKey.indexOf(':') + 1) : posKey;
+                                    player.sendMessage(Text.literal("§3[Dukkan] §eFiyat: " + entry.getValue().price + " AK Lirasi §f(Konum: " + pos + ")"), false);
+                                    foundAny = true;
+                                }
+                            }
+                            if (!foundAny) {
+                                player.sendMessage(Text.literal("§cOyuncuya ait herhangi bir kurum, tapu veya dukkan bulunmamaktadir."), false);
+                            }
+                            return 1;
+                        })));
 
         // /pay <id> <amount>
         dispatcher.register(CommandManager.literal("pay")
@@ -284,6 +337,69 @@ public class Commands {
                                         player.sendMessage(Text.literal("§cHazinede yeterli bakiye yok!"), false);
                                         return 0;
                                     }
+                                })))
+                .then(CommandManager.literal("sifirla")
+                        .executes(context -> {
+                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                            PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+                            Role role = state.getRole(player.getUuid());
+                            
+                            if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && !context.getSource().hasPermissionLevel(2)) {
+                                player.sendMessage(Text.literal("§cYetkiniz yok!"), false);
+                                return 0;
+                            }
+                            
+                            state.setTreasuryBalance(0.0);
+                            player.sendMessage(Text.literal("§aDevlet Hazinesi basariyla sifirlandi."), false);
+                            return 1;
+                        }))
+                .then(CommandManager.literal("fonla")
+                        .then(CommandManager.argument("binlik_miktar", IntegerArgumentType.integer(1))
+                                .executes(context -> {
+                                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                    PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+                                    Role role = state.getRole(player.getUuid());
+                                    
+                                    if (role != Role.PRESIDENT && !context.getSource().hasPermissionLevel(2)) {
+                                        player.sendMessage(Text.literal("§cBu komutu sadece Cumhurbaskani kullanabilir!"), false);
+                                        return 0;
+                                    }
+                                    
+                                    int binlik = IntegerArgumentType.getInteger(context, "binlik_miktar");
+                                    int requiredGold = binlik * 64;
+                                    double amountToAdd = binlik * 1000.0;
+                                    
+                                    int hasGold = 0;
+                                    for (int i = 0; i < player.getInventory().size(); i++) {
+                                        ItemStack stack = player.getInventory().getStack(i);
+                                        if (stack.getItem() == Items.GOLD_INGOT) {
+                                            hasGold += stack.getCount();
+                                        }
+                                    }
+                                    
+                                    if (hasGold < requiredGold) {
+                                        player.sendMessage(Text.literal("§cYeterli altin yok! Hazineye para eklemek icin §e" + requiredGold + " §cadet altin kulcesi gerekli."), false);
+                                        return 0;
+                                    }
+                                    
+                                    int remainingToRemove = requiredGold;
+                                    for (int i = 0; i < player.getInventory().size(); i++) {
+                                        if (remainingToRemove <= 0) break;
+                                        ItemStack stack = player.getInventory().getStack(i);
+                                        if (stack.getItem() == Items.GOLD_INGOT) {
+                                            if (stack.getCount() <= remainingToRemove) {
+                                                remainingToRemove -= stack.getCount();
+                                                player.getInventory().setStack(i, ItemStack.EMPTY);
+                                            } else {
+                                                stack.decrement(remainingToRemove);
+                                                remainingToRemove = 0;
+                                            }
+                                        }
+                                    }
+                                    
+                                    state.addTreasuryBalance(amountToAdd);
+                                    player.sendMessage(Text.literal("§aHazineye §e" + amountToAdd + " AK Lirasi §aeklendi. §c-" + requiredGold + " altin kulcesi."), false);
+                                    return 1;
                                 }))));
 
         // /vergi ekle <ad> <tutar> ve /vergi ode <ad> <tutar>
@@ -368,6 +484,78 @@ public class Commands {
                     }
                     return 1;
                 }));
+
+        // /tapularim
+        dispatcher.register(CommandManager.literal("tapularim")
+                .executes(context -> {
+                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                    PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+                    
+                    player.sendMessage(Text.literal("§b--- TAPU VE KURUMLARINIZ ---"), false);
+                    boolean foundAny = false;
+                    
+                    for (PlayerDataState.LegalEntity le : state.getLegalEntities()) {
+                        if (le.ownerUuid.equals(player.getUuid())) {
+                            player.sendMessage(Text.literal("§3[Kurum] §e" + le.name + " §f(ID: " + le.id + ") - Bakiye: " + le.balance + " AK Lirasi"), false);
+                            foundAny = true;
+                        }
+                    }
+                    
+                    for (PlayerDataState.TapuInfo t : state.getTapular()) {
+                        if (t.ownerUuid.equals(player.getUuid())) {
+                            player.sendMessage(Text.literal("§3[Tapu] §fID: " + t.id + " - Deger: §e" + t.value + " AK Lirasi"), false);
+                            foundAny = true;
+                        }
+                    }
+                    
+                    for (Map.Entry<String, PlayerDataState.ShopInfo> entry : state.getShops().entrySet()) {
+                        if (entry.getValue().ownerUuid.equals(player.getUuid())) {
+                            String posKey = entry.getKey();
+                            String pos = posKey.contains(":") ? posKey.substring(posKey.indexOf(':') + 1) : posKey;
+                            player.sendMessage(Text.literal("§3[Dukkan] §eFiyat: " + entry.getValue().price + " AK Lirasi §f(Konum: " + pos + ")"), false);
+                            foundAny = true;
+                        }
+                    }
+                    
+                    if (!foundAny) {
+                        player.sendMessage(Text.literal("§cSahip oldugunuz herhangi bir kurum veya dukkan (tapu) bulunmamaktadir."), false);
+                    }
+                    return 1;
+                }));
+
+        // /tapu commands
+        dispatcher.register(CommandManager.literal("tapu")
+                .then(CommandManager.literal("kayit")
+                        .then(CommandManager.argument("sahip_id", StringArgumentType.word())
+                                .then(CommandManager.argument("deger", DoubleArgumentType.doubleArg(0.0))
+                                        .executes(context -> {
+                                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                            PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+                                            Role role = state.getRole(player.getUuid());
+                                            
+                                            if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && !context.getSource().hasPermissionLevel(2)) {
+                                                player.sendMessage(Text.literal("§cBu komutu sadece Cumhurbaskani, Basbakan veya Yetkililer kullanabilir!"), false);
+                                                return 0;
+                                            }
+                                            
+                                            String targetId = StringArgumentType.getString(context, "sahip_id");
+                                            double deger = DoubleArgumentType.getDouble(context, "deger");
+                                            
+                                            UUID targetUuid = state.getUuidFromId(targetId);
+                                            if (targetUuid == null) {
+                                                player.sendMessage(Text.literal("§cBu ID'ye sahip bir oyuncu bulunamadi!"), false);
+                                                return 0;
+                                            }
+                                            
+                                            PlayerDataState.TapuInfo yeniTapu = state.createTapu(targetUuid, deger);
+                                            player.sendMessage(Text.literal("§aBasariyla yeni tapu olusturuldu! Tapu ID: §e" + yeniTapu.id + " §aSahibi: §e" + targetId), false);
+                                            
+                                            ServerPlayerEntity targetPlayer = context.getSource().getServer().getPlayerManager().getPlayer(targetUuid);
+                                            if (targetPlayer != null) {
+                                                targetPlayer.sendMessage(Text.literal("§aAdiniza yeni bir tapu (ID: " + yeniTapu.id + ") kaydedildi! Deger: §e" + deger + " AK Lirasi"), false);
+                                            }
+                                            return 1;
+                                        })))));
 
         // /shop commands
         dispatcher.register(CommandManager.literal("shop")

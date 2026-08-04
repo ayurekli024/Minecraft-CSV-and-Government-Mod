@@ -41,6 +41,18 @@ public class PlayerDataState extends PersistentState {
         }
     }
     
+    public static class TapuInfo {
+        public String id; // e.g. "T00001"
+        public UUID ownerUuid;
+        public double value;
+
+        public TapuInfo(String id, UUID ownerUuid, double value) {
+            this.id = id;
+            this.ownerUuid = ownerUuid;
+            this.value = value;
+        }
+    }
+    
     private final Map<UUID, String> uuidToSecretId = new HashMap<>();
     private final Map<String, UUID> secretIdToUuid = new HashMap<>();
     private final Map<UUID, Double> uuidToBalance = new HashMap<>();
@@ -53,6 +65,9 @@ public class PlayerDataState extends PersistentState {
     
     private final Map<String, LegalEntity> legalEntities = new HashMap<>();
     private int legalEntityCounter = 0;
+    
+    private final Map<String, TapuInfo> tapular = new HashMap<>();
+    private int tapuCounter = 0;
     
     private final Random random = new Random();
 
@@ -113,6 +128,17 @@ public class PlayerDataState extends PersistentState {
         }
         nbt.put("legalEntities", leCompound);
         nbt.putInt("legalEntityCounter", legalEntityCounter);
+        
+        NbtCompound tapuCompound = new NbtCompound();
+        for (Map.Entry<String, TapuInfo> entry : tapular.entrySet()) {
+            NbtCompound tapuData = new NbtCompound();
+            tapuData.putString("id", entry.getValue().id);
+            tapuData.putUuid("ownerUuid", entry.getValue().ownerUuid);
+            tapuData.putDouble("value", entry.getValue().value);
+            tapuCompound.put(entry.getKey(), tapuData);
+        }
+        nbt.put("tapular", tapuCompound);
+        nbt.putInt("tapuCounter", tapuCounter);
         
         return nbt;
     }
@@ -183,6 +209,20 @@ public class PlayerDataState extends PersistentState {
         }
         if (tag.contains("legalEntityCounter")) {
             state.legalEntityCounter = tag.getInt("legalEntityCounter");
+        }
+        
+        if (tag.contains("tapular")) {
+            NbtCompound tapuCompound = tag.getCompound("tapular");
+            for (String key : tapuCompound.getKeys()) {
+                NbtCompound tapuData = tapuCompound.getCompound(key);
+                String id = tapuData.getString("id");
+                UUID ownerUuid = tapuData.getUuid("ownerUuid");
+                double value = tapuData.getDouble("value");
+                state.tapular.put(key, new TapuInfo(id, ownerUuid, value));
+            }
+        }
+        if (tag.contains("tapuCounter")) {
+            state.tapuCounter = tag.getInt("tapuCounter");
         }
         
         return state;
@@ -357,5 +397,22 @@ public class PlayerDataState extends PersistentState {
     
     public java.util.Collection<LegalEntity> getLegalEntities() {
         return legalEntities.values();
+    }
+    
+    public TapuInfo createTapu(UUID ownerUuid, double value) {
+        tapuCounter++;
+        String newId = String.format("T%05d", tapuCounter);
+        TapuInfo t = new TapuInfo(newId, ownerUuid, value);
+        tapular.put(newId, t);
+        markDirty();
+        return t;
+    }
+
+    public TapuInfo getTapu(String id) {
+        return tapular.get(id);
+    }
+    
+    public java.util.Collection<TapuInfo> getTapular() {
+        return tapular.values();
     }
 }
