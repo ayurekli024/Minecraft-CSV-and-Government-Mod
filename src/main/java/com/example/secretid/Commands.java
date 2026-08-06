@@ -881,23 +881,42 @@ public class Commands {
         // /kurum commands
         dispatcher.register(CommandManager.literal("kurum")
                 .then(CommandManager.literal("olustur")
-                        .then(CommandManager.argument("isim", StringArgumentType.string())
-                                .executes(context -> {
-                                    ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-                                    PlayerDataState state = PlayerDataState.getServerState(player.getServer());
-                                    Role role = state.getRole(player.getUuid());
+                        .then(CommandManager.literal("kamu")
+                                .then(CommandManager.argument("isim", StringArgumentType.string())
+                                        .executes(context -> {
+                                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                            PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+                                            Role role = state.getRole(player.getUuid());
 
-                                    if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && role != Role.MINISTER && !context.getSource().hasPermissionLevel(2)) {
-                                        player.sendMessage(Text.literal("§cBu komutu sadece üst düzey yetkililer kullanabilir!"), false);
-                                        return 0;
-                                    }
+                                            if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && role != Role.MP && !context.getSource().hasPermissionLevel(2)) {
+                                                player.sendMessage(Text.literal("§cBu komutu sadece Cumhurbaşkanı, Başbakan veya Milletvekilleri kullanabilir!"), false);
+                                                return 0;
+                                            }
 
-                                    String isim = StringArgumentType.getString(context, "isim");
-                                    PlayerDataState.LegalEntity le = state.createLegalEntity(isim, player.getUuid());
-                                    
-                                    player.sendMessage(Text.literal("§aYeni tüzel kişilik başarıyla oluşturuldu! ID: §e" + le.id), false);
-                                    return 1;
-                                })))
+                                            String isim = StringArgumentType.getString(context, "isim");
+                                            PlayerDataState.LegalEntity le = state.createKamuEntity(isim, player.getUuid());
+                                            
+                                            player.sendMessage(Text.literal("§aYeni kamu kurumu başarıyla oluşturuldu! ID: §e" + le.id), false);
+                                            return 1;
+                                        })))
+                        .then(CommandManager.literal("ozel")
+                                .then(CommandManager.argument("isim", StringArgumentType.string())
+                                        .executes(context -> {
+                                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                            PlayerDataState state = PlayerDataState.getServerState(player.getServer());
+                                            Role role = state.getRole(player.getUuid());
+
+                                            if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && role != Role.MP && !context.getSource().hasPermissionLevel(2)) {
+                                                player.sendMessage(Text.literal("§cBu komutu sadece Cumhurbaşkanı, Başbakan veya Milletvekilleri kullanabilir!"), false);
+                                                return 0;
+                                            }
+
+                                            String isim = StringArgumentType.getString(context, "isim");
+                                            PlayerDataState.LegalEntity le = state.createLegalEntity(isim, player.getUuid());
+                                            
+                                            player.sendMessage(Text.literal("§aYeni özel kurum başarıyla oluşturuldu! ID: §e" + le.id), false);
+                                            return 1;
+                                        }))))
                 .then(CommandManager.literal("bilgi")
                         .then(CommandManager.argument("id", StringArgumentType.word())
                                 .executes(context -> {

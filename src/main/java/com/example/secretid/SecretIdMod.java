@@ -129,6 +129,7 @@ public class SecretIdMod implements ModInitializer {
 
 					ItemStack purchaseStack = targetStack.copy();
 					purchaseStack.setCount(1);
+					String purchasedItemName = purchaseStack.getName().getString();
 
 					if (player instanceof ServerPlayerEntity serverPlayer) {
 						if (serverPlayer.getInventory().insertStack(purchaseStack)) {
@@ -140,12 +141,12 @@ public class SecretIdMod implements ModInitializer {
 							pState.removeBalance(buyerUuid, shop.price);
 							pState.addBalance(shop.ownerUuid, shop.price);
 
-							serverPlayer.sendMessage(Text.literal("§aBasariyla §e1x " + purchaseStack.getName().getString() + " §asatin aldin! Fiyat: §e" + shop.price + " AK Lirasi"), false);
+							serverPlayer.sendMessage(Text.literal("§aBasariyla §e1x " + purchasedItemName + " §asatin aldin! Fiyat: §e" + shop.price + " AK Lirasi"), false);
 
 							// Notify owner if online
 							ServerPlayerEntity ownerPlayer = world.getServer().getPlayerManager().getPlayer(shop.ownerUuid);
 							if (ownerPlayer != null) {
-								ownerPlayer.sendMessage(Text.literal("§6[Dukkan] §e" + serverPlayer.getName().getString() + " §aadli oyuncu dukkaninizdan §e1x " + purchaseStack.getName().getString() + " §asatin aldi! Hesabiniza §e" + shop.price + " AK Lirasi §aaktarildi."), false);
+								ownerPlayer.sendMessage(Text.literal("§6[Dukkan] §e" + serverPlayer.getName().getString() + " §aadli oyuncu dukkaninizdan §e1x " + purchasedItemName + " §asatin aldi! Hesabiniza §e" + shop.price + " AK Lirasi §aaktarildi."), false);
 							}
 						} else {
 							serverPlayer.sendMessage(Text.literal("§cEnvanteriniz dolu!"), false);

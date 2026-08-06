@@ -3,7 +3,7 @@
 Minecraft sunucuları için gelişmiş rol, ekonomi, vergi, devlet yönetimi, yasa ve tüzel kişilik sistemleri sunan bir Fabric modudur.
 
 ## Sürüm
-Güncel sürüm: **1.7.0**
+Güncel sürüm: **1.7.1**
 
 ## Özellikler
 
@@ -53,8 +53,9 @@ Oyuncular vanilya sandık veya varillerini kişisel dükkanlara çevirebilir.
 - *Kullanım:* Sandığa ilk sağ tıklandığında bilgi verir, 5 saniye içinde tekrar sağ tıklandığında içindeki eşya satın alınır. Sadece dükkan sahibi veya OP'ler sandığı açıp kırabilir.
 
 ### 7. Tüzel Kişilik (Kurum/Şirket) Sistemi
-Devlet veya oyuncular tarafından yönetilen, `X00001` formatında ID'si ve kendi bakiyesi olan bağımsız hesaplar. Taksi modu gibi başka modlar da bu sistemi fon havuzu olarak kullanabilir.
-- `/kurum olustur <kurum_adi>`: Yeni bir tüzel kişilik oluşturur (Sadece Hükümet).
+Devlet veya oyuncular tarafından yönetilen, kendi bakiyesi olan bağımsız hesaplar. Taksi modu gibi başka modlar da bu sistemi fon havuzu olarak kullanabilir.
+- `/kurum olustur kamu <kurum_adi>`: Yeni bir kamu kurumu oluşturur. ID `XKUR01`, `XKUR02` şeklinde oluşturulur. (Sadece Cumhurbaşkanı, Başbakan veya Milletvekili kullanabilir).
+- `/kurum olustur ozel <kurum_adi>`: Yeni bir özel kurum oluşturur. ID `X00001`, `X00002` şeklinde oluşturulur. (Sadece Cumhurbaşkanı, Başbakan veya Milletvekili kullanabilir).
 - `/kurum bilgi <X_kodu>`: Kurum bilgisini ve bakiyesini gösterir.
 - `/kurum fonla <secret_id> <X_kodu> <miktar>`: Devlet hazinesinden kuruma bakiye aktarır (Sadece Cumhurbaşkanı yetkilidir ve sahteciliği önlemek için kendi `secret_id`'si ile imzalamalıdır).
 - `/kurum yatir <X_kodu> <miktar>`: Kendi cebinizden kurumun kasasına para yatırır.

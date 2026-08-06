@@ -65,6 +65,7 @@ public class PlayerDataState extends PersistentState {
     
     private final Map<String, LegalEntity> legalEntities = new HashMap<>();
     private int legalEntityCounter = 0;
+    private int kamuEntityCounter = 0;
     
     private final Map<String, TapuInfo> tapular = new HashMap<>();
     private int tapuCounter = 0;
@@ -128,6 +129,7 @@ public class PlayerDataState extends PersistentState {
         }
         nbt.put("legalEntities", leCompound);
         nbt.putInt("legalEntityCounter", legalEntityCounter);
+        nbt.putInt("kamuEntityCounter", kamuEntityCounter);
         
         NbtCompound tapuCompound = new NbtCompound();
         for (Map.Entry<String, TapuInfo> entry : tapular.entrySet()) {
@@ -209,6 +211,9 @@ public class PlayerDataState extends PersistentState {
         }
         if (tag.contains("legalEntityCounter")) {
             state.legalEntityCounter = tag.getInt("legalEntityCounter");
+        }
+        if (tag.contains("kamuEntityCounter")) {
+            state.kamuEntityCounter = tag.getInt("kamuEntityCounter");
         }
         
         if (tag.contains("tapular")) {
@@ -385,6 +390,15 @@ public class PlayerDataState extends PersistentState {
     public LegalEntity createLegalEntity(String name, UUID ownerUuid) {
         legalEntityCounter++;
         String newId = String.format("X%05d", legalEntityCounter);
+        LegalEntity le = new LegalEntity(newId, name, ownerUuid, 0.0);
+        legalEntities.put(newId, le);
+        markDirty();
+        return le;
+    }
+
+    public LegalEntity createKamuEntity(String name, UUID ownerUuid) {
+        kamuEntityCounter++;
+        String newId = String.format("XKUR%02d", kamuEntityCounter);
         LegalEntity le = new LegalEntity(newId, name, ownerUuid, 0.0);
         legalEntities.put(newId, le);
         markDirty();
