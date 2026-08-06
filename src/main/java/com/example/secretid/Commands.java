@@ -49,6 +49,78 @@ public class Commands {
 
         // /oyuncupara <id>
         dispatcher.register(CommandManager.literal("oyuncupara")
+                .then(CommandManager.literal("ekle")
+                        .then(CommandManager.argument("targetId", StringArgumentType.word())
+                                .then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0.1))
+                                        .executes(context -> {
+                                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                            PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+                                            Role role = state.getRole(player.getUuid());
+
+                                            if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && !context.getSource().hasPermissionLevel(2)) {
+                                                player.sendMessage(Text.literal("§cBu komutu sadece Cumhurbaskani veya Basbakan kullanabilir!"), false);
+                                                return 0;
+                                            }
+
+                                            String targetId = StringArgumentType.getString(context, "targetId");
+                                            double amount = DoubleArgumentType.getDouble(context, "amount");
+
+                                            UUID targetUuid = state.getUuidFromId(targetId);
+                                            if (targetUuid == null) {
+                                                player.sendMessage(Text.literal("§cBu ID'ye sahip bir oyuncu bulunamadi!"), false);
+                                                return 0;
+                                            }
+
+                                            if (state.removeTreasuryBalance(amount)) {
+                                                state.addBalance(targetUuid, amount);
+                                                player.sendMessage(Text.literal("§aHazineden §e" + targetId + " §aID'li oyuncuya §e" + amount + " AK Lirasi §aeklendi."), false);
+                                                
+                                                ServerPlayerEntity targetPlayer = context.getSource().getServer().getPlayerManager().getPlayer(targetUuid);
+                                                if (targetPlayer != null) {
+                                                    targetPlayer.sendMessage(Text.literal("§aDevlet Hazinesi tarafindan hesabina §e" + amount + " AK Lirasi §aeklendi!"), false);
+                                                }
+                                                return 1;
+                                            } else {
+                                                player.sendMessage(Text.literal("§cHazinede yeterli bakiye yok!"), false);
+                                                return 0;
+                                            }
+                                        }))))
+                .then(CommandManager.literal("sil")
+                        .then(CommandManager.argument("targetId", StringArgumentType.word())
+                                .then(CommandManager.argument("amount", DoubleArgumentType.doubleArg(0.1))
+                                        .executes(context -> {
+                                            ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                                            PlayerDataState state = PlayerDataState.getServerState(context.getSource().getServer());
+                                            Role role = state.getRole(player.getUuid());
+
+                                            if (role != Role.PRESIDENT && role != Role.PRIME_MINISTER && !context.getSource().hasPermissionLevel(2)) {
+                                                player.sendMessage(Text.literal("§cBu komutu sadece Cumhurbaskani veya Basbakan kullanabilir!"), false);
+                                                return 0;
+                                            }
+
+                                            String targetId = StringArgumentType.getString(context, "targetId");
+                                            double amount = DoubleArgumentType.getDouble(context, "amount");
+
+                                            UUID targetUuid = state.getUuidFromId(targetId);
+                                            if (targetUuid == null) {
+                                                player.sendMessage(Text.literal("§cBu ID'ye sahip bir oyuncu bulunamadi!"), false);
+                                                return 0;
+                                            }
+
+                                            if (state.removeBalance(targetUuid, amount)) {
+                                                state.addTreasuryBalance(amount);
+                                                player.sendMessage(Text.literal("§a§e" + targetId + " §aID'li oyuncudan §e" + amount + " AK Lirasi §asilindi ve hazineye eklendi."), false);
+                                                
+                                                ServerPlayerEntity targetPlayer = context.getSource().getServer().getPlayerManager().getPlayer(targetUuid);
+                                                if (targetPlayer != null) {
+                                                    targetPlayer.sendMessage(Text.literal("§cDevlet tarafindan hesabindan §e" + amount + " AK Lirasi §asilindi!"), false);
+                                                }
+                                                return 1;
+                                            } else {
+                                                player.sendMessage(Text.literal("§cOyuncunun yeterli bakiyesi yok!"), false);
+                                                return 0;
+                                            }
+                                        }))))
                 .then(CommandManager.argument("targetId", StringArgumentType.word())
                         .executes(context -> {
                             ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
